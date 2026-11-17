@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Library System | Assam Skill University</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Emergency / Campus Notice Bar -->
+  <div class="top-announcement-bar">
+    <div>
+      <span class="badge">Campus Update</span>
+      <span id="announcementHeadline">Central Library Reading Halls & Digital AI Lab Open Till 11:30 PM for Mid-Semester Exams</span>
+    </div>
+    <div id="liveClock" style="font-family: monospace; font-weight: 600;">11 Nov 2026 | 10:45 PM</div>
+  </div>
+
+  <!-- Header & University Branding -->
+  <header class="header-main">
+    <div class="brand-wrapper">
+      <div class="asu-crest">ASU</div>
+      <div class="brand-title-group">
+        <h1>Assam Skill University Central Library</h1>
+        <div class="sub-title">
+          <span>Mangaldai Campus, Darrang, Assam</span>
+          <span>•</span>
+          <span style="color: #059669; font-weight: 700;">Smart Book & Seat System</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Persona Switcher -->
+      <div class="persona-selector" title="Switch simulated active user profile">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Active User:</span>
+        <select id="userPersonaSelect">
+          <option value="ASU/2026/AI-104" data-name="Ankur Barman" data-dept="School of Computing & AI" selected>Ankur Barman (B.Tech AI)</option>
+          <option value="ASU/2026/MT-022" data-name="Priyanshu Sharma" data-dept="School of Manufacturing & Robotics">Priyanshu Sharma (Mechatronics)</option>
+          <option value="ASU/2026/EV-015" data-name="Dipika Kalita" data-dept="School of Green Energy">Dipika Kalita (Green Energy)</option>
+          <option value="ADMIN" data-name="Dr. B. K. Sarma (Chief Librarian)" data-dept="Central Library Administration">Dr. B. K. Sarma (Chief Librarian)</option>
+        </select>
+      </div>
+
+      <!-- Notification Bell with Counter -->
+      <button class="nav-action-btn" id="notifBtn" title="View Alerts & Reminders">
+        <span>🔔</span>
+        <span class="badge-counter" id="unreadBadge">2</span>
+      </button>
+
+      <!-- Audio Alert Toggle -->
+      <button class="nav-action-btn" id="soundToggleBtn" title="Toggle audio alert sound chimes">
+        <span id="soundIcon">🔊</span>
+      </button>
+
+      <!-- Design Thinking Presentation Deck Link -->
+      <a href="presentation.html" target="_blank" class="nav-action-btn" style="background: #065f46; color: #fff; text-decoration: none; border-color: #044332;" title="Launch Design Thinking Presentation Slides">
+        <span>📊</span> Design Thinking Deck
+      </a>
+    </div>
+  </header>
+
+  <!-- Live Statistics Strip -->
+  <section class="stats-strip">
+    <div class="stat-pill green">
+      <div class="icon-box">🪑</div>
+      <div class="stat-info">
+        <div class="label">Available Seats</div>
+        <div class="value" id="statAvailSeats">-- / 48</div>
+      </div>
+    </div>
+    <div class="stat-pill blue">
+      <div class="icon-box">📚</div>
+      <div class="stat-info">
+        <div class="label">Books Cataloged</div>
+        <div class="value" id="statTotalBooks">--</div>
+      </div>
+    </div>
+    <div class="stat-pill amber">
+      <div class="icon-box">⏳</div>
+      <div class="stat-info">
+        <div class="label">My Active Loans</div>
+        <div class="value" id="statMyLoans">--</div>
+      </div>
+    </div>
+    <div class="stat-pill red">
+      <div class="icon-box">🚨</div>
+      <div class="stat-info">
+        <div class="label">Overdue Fines</div>
+        <div class="value" id="statOverdueFines">₹0.00</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Navigation Tabs -->
+  <nav class="tabs-container">
+    <button class="tab-btn active" data-tab="tab-books">
+      <span>🔍</span> Book Search & Shelf Locator
+    </button>
+    <button class="tab-btn" data-tab="tab-seats">
+      <span>🪑</span> Real-Time Seat Occupancy
+    </button>
+    <button class="tab-btn" data-tab="tab-borrowings">
+      <span>⏳</span> My Borrowings & Due Dates
+    </button>
+    <button class="tab-btn" data-tab="tab-alerts">
+      <span>🔔</span> Automated Alerts (SMS & Email)
+    </button>
+    <button class="tab-btn" data-tab="tab-resources">
+      <span>🌐</span> Digital Skill Repository
+    </button>
+    <button class="tab-btn" data-tab="tab-admin" id="adminTabBtn">
+      <span>⚙️</span> Librarian Circulation Desk
+    </button>
+  </nav>
+
+  <!-- Main Application Body -->
+  <main class="main-layout">
+
+    <!-- ====================================================================
+         TAB 1: BOOK SEARCH & PHYSICAL SHELF LOCATOR
+         ==================================================================== -->
+    <section id="tab-books" class="tab-pane active">
+      <div class="search-hero">
+        <h2>Smart Catalog & Indoor Shelf Locator</h2>
+        <p>Search across 24+ curated textbooks and lab manuals for Assam Skill University. Pinpoint the exact floor, aisle, rack, and shelf tier with step-by-step turn-by-turn navigation.</p>
+        
+        <div class="search-box-wrap">
+          <input type="text" id="bookSearchInput" placeholder="Search by Title, Author, Keyword, ISBN, or Call Number (e.g., 'Robotics', 'Python', '629.892')...">
+          <select id="bookFilterFloor">
+            <option value="">All Floors</option>
+            <option value="0">Ground Floor (General & Reference)</option>
+            <option value="1">Floor 1 (AI, Computing & Robotics)</option>
+            <option value="2">Floor 2 (Green Energy & Healthcare)</option>
+          </select>
+          <button id="btnSearchBooks">
+            <span>🔍</span> Find Books
+          </button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="filter-chips-row" id="categoryChips">
+        <div class="filter-chip active" data-cat="">All Subjects</div>
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <!-- Books Grid -->
+      <div class="books-grid" id="booksGrid">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+          Loading library catalog...
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 2: REAL-TIME SEAT OCCUPANCY & BOOKING
+         ==================================================================== -->
+    <section id="tab-seats" class="tab-pane">
+      <div class="seat-view-header">
+        <div class="floor-switch-btn-group">
+          <button class="floor-btn active" data-floor="1" id="btnFloor1">Floor 1 (Quiet Study & AI Workstations)</button>
+          <button class="floor-btn" data-floor="2" id="btnFloor2">Floor 2 (Collaborative Pods & Research)</button>
+        </div>
+
+        <div class="seat-legend">
+          <div class="legend-item"><div class="legend-dot avail"></div> Available (Click to reserve)</div>
+          <div class="legend-item"><div class="legend-dot occ"></div> Occupied</div>
+          <div class="legend-item"><div class="legend-dot res"></div> Reserved (Grace Period)</div>
+          <div class="legend-item"><div class="legend-dot maint"></div> Maintenance</div>
+        </div>
+
+        <div>
+          <button class="nav-action-btn" id="btnRefreshSeats">
+            <span>🔄</span> Refresh Live Map
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive SVG Floor Plan Map Container -->
+      <div class="seat-map-wrapper">
+        <div class="svg-floor-container" id="svgFloorPlanContainer">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- Zone Breakdown Cards -->
+      <div class="zones-overview-grid" id="zonesOverview">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 3: MY BORROWINGS & DUE DATES
+         ==================================================================== -->
+    <section id="tab-borrowings" class="tab-pane">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h2 style="font-size: 1.4rem; font-weight: 800;">My Active Borrowings & Due-Date Tracker</h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Monitor loan countdowns, calculate overdue fines (₹2.00/day), and request instant 14-day extensions.</p>
+        </div>
+        <button class="nav-action-btn" id="btnSimulateReminders" style="background: var(--primary); color: #fff; border: none; padding: 10px 18px;">
+          <span>⚡</span> Trigger Automated Reminder Dispatch
+        </button>
+      </div>
+
+      <div class="borrowings-container" id="borrowingsList">
+        <!-- Populated dynamically -->
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 4: ALERTS & REMINDERS CENTER (SMS & EMAIL SIMULATOR)
+         ==================================================================== -->
+    <section id="tab-alerts" class="tab-pane">
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 1.4rem; font-weight: 800;">Multi-Channel Automated Alert Dispatcher</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">To ensure books are returned on time and zero study seats are ghosted, the ASU Library system dispatches automated SMS, Email, and In-App push reminders.</p>
+      </div>
+
+      <div class="alert-channels-grid">
+        <!-- Channel 1: In-App System Feed -->
+        <div class="alert-channel-panel">
+          <div class="channel-header">
+            <div class="channel-title">
+              <span>🔔</span> In-App Notifications
+            </div>
+            <span class="badge" style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">Live Feed</span>
+          </div>
+          <div id="inAppAlertsList" style="display: flex; flex-direction: column; gap: 12px; max-height: 480px; overflow-y: auto;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Channel 2: Simulated Student Mobile SMS -->
+        <div class="alert-channel-panel">
+          <div class="channel-header">
+            <div class="channel-title">
+              <span>📱</span> Student Mobile SMS Gateway (+91 98640-XXXXX)
+            </div>
+            <span class="badge" style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">GSM Modem</span>
+          </div>
+
+          <div class="phone-mockup">
+            <div class="phone-notch"></div>
+            <div class="phone-screen" id="smsScreenContainer">
+              <div style="font-size: 0.72rem; color: #64748b; text-align: center; margin-bottom: 12px;">Sender: ASU-LIB (Assam Skill Univ)</div>
+              <!-- SMS messages appended dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Channel 3: Simulated Institutional Email Notification -->
+        <div class="alert-channel-panel">
+          <div class="channel-header">
+            <div class="channel-title">
+              <span>✉️</span> ASU Student Webmail
+            </div>
+            <span class="badge" style="background:#d1fae5; color:#065f46; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">SMTP Ready</span>
+          </div>
+
+          <div class="email-mockup" id="emailMockupContainer">
+            <!-- Email preview appended dynamically -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 5: DIGITAL SKILL REPOSITORY
+         ==================================================================== -->
+    <section id="tab-resources" class="tab-pane">
+      <div style="margin-bottom: 24px;">
+        <h2 style="font-size: 1.4rem; font-weight: 800;">Digital Skill Repositories & E-Resources</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Direct institutional IP gateway links to world-class academic journals, NPTEL/SWAYAM lectures, and vocational skill manuals.</p>
+      </div>
+
+      <div class="zones-overview-grid">
+        <div class="zone-card">
+          <div class="zone-card-header">
+            <div class="zone-title" style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.4rem;">⚡</span> IEEE Xplore Digital Library
+            </div>
+            <span style="color:#059669; font-weight:700; font-size:0.75rem;">CAMPUS SUBSCRIBED</span>
+          </div>
+          <p style="font-size:0.85rem; color:#475569;">Access over 5 million peer-reviewed conference proceedings and transactions in Robotics, Artificial Intelligence, and Smart Electrical Grids.</p>
+          <a href="https://ieeexplore.ieee.org" target="_blank" style="margin-top:auto; background:#f0fdf4; color:#065f46; text-decoration:none; padding:8px 12px; border-radius:6px; font-weight:700; text-align:center; font-size:0.85rem; border:1px solid #a7f3d0;">Launch IEEE Portal ↗</a>
+        </div>
+
+        <div class="zone-card">
+          <div class="zone-card-header">
+            <div class="zone-title" style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.4rem;">📚</span> DELNET Developing Library Network
+            </div>
+            <span style="color:#059669; font-weight:700; font-size:0.75rem;">INTER-LIBRARY LOAN</span>
+          </div>
+          <p style="font-size:0.85rem; color:#475569;">Inter-library lending network covering 7,500+ institutional libraries across India for rare research manuscripts and union catalogs.</p>
+          <a href="https://delnet.in" target="_blank" style="margin-top:auto; background:#f0fdf4; color:#065f46; text-decoration:none; padding:8px 12px; border-radius:6px; font-weight:700; text-align:center; font-size:0.85rem; border:1px solid #a7f3d0;">Access DELNET Catalog ↗</a>
+        </div>
+
+        <div class="zone-card">
+          <div class="zone-card-header">
+            <div class="zone-title" style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.4rem;">🎓</span> NPTEL / SWAYAM Vocational Mappings
+            </div>
+            <span style="color:#2563eb; font-weight:700; font-size:0.75rem;">FREE COURSEWARE</span>
+          </div>
+          <p style="font-size:0.85rem; color:#475569;">Curriculum-mapped video lectures from IIT professors in Industrial Automation, EV Powertrains, and Machine Learning.</p>
+          <a href="https://nptel.ac.in" target="_blank" style="margin-top:auto; background:#eff6ff; color:#1e40af; text-decoration:none; padding:8px 12px; border-radius:6px; font-weight:700; text-align:center; font-size:0.85rem; border:1px solid #bfdbfe;">Browse Video Courses ↗</a>
+        </div>
+
+        <div class="zone-card">
+          <div class="zone-card-header">
+            <div class="zone-title" style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.4rem;">📝</span> ASU Past Examination Papers (PYQs)
+            </div>
+            <span style="color:#d97706; font-weight:700; font-size:0.75rem;">INSTITUTIONAL ARCHIVE</span>
+          </div>
+          <p style="font-size:0.85rem; color:#475569;">Download official previous semester question papers, model answer keys, and skill practical exam viva guides.</p>
+          <button onclick="alert('Downloading ASU 2025 Mid-Sem Exam Papers Archive (ZIP)...')" style="margin-top:auto; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:8px 12px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.85rem;">Download PYQ Bundle (ZIP) ↓</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         TAB 6: LIBRARIAN CIRCULATION & ADMIN DESK
+         ==================================================================== -->
+    <section id="tab-admin" class="tab-pane">
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 1.4rem; font-weight: 800;">Librarian Circulation Desk & Management Portal</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Issue/Return books with barcode scan simulation, catalog new skill texts with shelf positioning, and manage seat allocations.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+        <!-- Circulation Action 1: Issue Book -->
+        <div class="zone-card">
+          <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            📤 Quick Issue (Check-Out)
+          </h3>
+          <form id="formIssueBook" style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Select Book Title:</label>
+              <select id="issueBookSelect" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);" required>
+                <!-- Filled via JS -->
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Student Roll / ID:</label>
+              <input type="text" id="issueStudentId" placeholder="e.g. ASU/2026/AI-104" value="ASU/2026/AI-104" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);" required>
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Student Full Name:</label>
+              <input type="text" id="issueStudentName" placeholder="e.g. Ankur Barman" value="Ankur Barman" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);" required>
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Loan Duration:</label>
+              <select id="issueDuration" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                <option value="14">14 Days (Standard Student Loan)</option>
+                <option value="28">28 Days (Faculty / Research Loan)</option>
+              </select>
+            </div>
+            <button type="submit" style="background: var(--primary); color: #fff; padding: 10px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">
+              Confirm Book Issue ↗
+            </button>
+          </form>
+        </div>
+
+        <!-- Circulation Action 2: Add New Book & Map to Shelf -->
+        <div class="zone-card">
+          <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            ➕ Catalog New Book & Shelf Mapping
+          </h3>
+          <form id="formAddBook" style="display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Book Title:</label>
+              <input type="text" id="newBookTitle" placeholder="e.g. Industrial IoT & Sensors" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Author(s):</label>
+              <input type="text" id="newBookAuthor" placeholder="e.g. Dr. H. Bora" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600;">Floor:</label>
+                <select id="newBookFloor" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                  <option value="1">Floor 1</option>
+                  <option value="2">Floor 2</option>
+                  <option value="0">Floor 0 (Ground)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600;">Aisle & Rack:</label>
+                <input type="text" id="newBookRack" value="Aisle B-2 / Rack R-01" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600;">Shelf Tier (1-4):</label>
+                <select id="newBookTier" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                  <option value="2">Tier 2 (Chest Level)</option>
+                  <option value="3">Tier 3 (Eye Level)</option>
+                  <option value="1">Tier 1 (Bottom)</option>
+                  <option value="4">Tier 4 (Top)</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 600;">Copies:</label>
+                <input type="number" id="newBookCopies" value="4" min="1" max="50" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+              </div>
+            </div>
+            <button type="submit" style="background: #0284c7; color: #fff; padding: 10px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">
+              Catalog & Position on Shelf
+            </button>
+          </form>
+        </div>
+
+        <!-- Circulation Action 3: Campus Announcement Broadcaster -->
+        <div class="zone-card">
+          <h3 style="font-size: 1.1rem; font-weight: 700; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            📢 Broadcast Campus Notice
+          </h3>
+          <form id="formBroadcast" style="display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Notice Headline:</label>
+              <input type="text" id="broadcastTitle" placeholder="e.g. Library Closure for Maintenance" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+            </div>
+            <div>
+              <label style="font-size: 0.8rem; font-weight: 600;">Detailed Message:</label>
+              <textarea id="broadcastMessage" rows="3" placeholder="Write announcement details..." required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border);"></textarea>
+            </div>
+            <button type="submit" style="background: var(--accent); color: #fff; padding: 10px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer;">
+              Broadcast Notice
+            </button>
+          </form>
+
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Reset entire database to clean demo state:</span>
+            <button id="btnResetDb" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+              Reset Demo DB
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       MODAL 1: INTERACTIVE SHELF LOCATOR & INDOOR FLOOR MAP
+       ==================================================================== -->
+  <div class="modal-overlay" id="shelfLocatorModal">
+    <div class="modal-window" style="max-width: 860px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">🗺️</span>
+          <div>
+            <h3 id="modalBookTitle">Book Title</h3>
+            <div id="modalBookAuthor" style="font-size: 0.8rem; color: var(--text-muted);">Author</div>
+          </div>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal('shelfLocatorModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Shelf Breadcrumb -->
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 0.75rem; color: #065f46; font-weight: 700; text-transform: uppercase;">Exact Physical Location Coordinates</div>
+            <div id="modalBreadcrumb" style="font-size: 1.05rem; font-weight: 800; color: #044332;">Floor 1 > Aisle B-1 > Rack R-02 > Tier 3</div>
+          </div>
+          <div id="modalCallBadge" style="background: #065f46; color: #fff; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-weight: 800; font-size: 0.9rem;">006.31 CHO</div>
+        </div>
+
+        <!-- Interactive 2D Floor Plan SVG highlighting the exact book rack -->
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #334155;">Indoor Architectural Map — Target Rack Beacon</span>
+            <span id="modalFloorLabel" style="font-size: 0.75rem; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-weight: 600;">Floor 1</span>
+          </div>
+          <div id="modalSvgMapContainer" style="overflow-x: auto;">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+
+        <!-- 3D / Layered Shelf Tier Visualizer & Walking Directions -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <!-- 4-Tier Rack Shelf Elevation Graphic -->
+          <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; color: var(--text-main);">Rack Elevation (Tier 1-4)</div>
+            <div id="tierVisualizer" style="display: flex; flex-direction: column; gap: 6px;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Step-by-Step Walking Directions -->
+          <div style="background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 10px; color: var(--text-main);">Walking Route from Entrance</div>
+            <ol id="modalWalkingGuide" style="font-size: 0.8rem; color: #475569; padding-left: 18px; line-height: 1.6;">
+              <!-- Rendered via JS -->
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="nav-action-btn" onclick="closeModal('shelfLocatorModal')">Close</button>
+        <button id="modalBtnReserve" class="btn-reserve" style="padding: 10px 20px; font-size: 0.9rem;">
+          Reserve Copy Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 2: SEAT RESERVATION & DIGITAL QR BOARDING PASS
+       ==================================================================== -->
+  <div class="modal-overlay" id="seatBookingModal">
+    <div class="modal-window" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="seatModalTitle">Study Seat Reservation</h3>
+        <button class="modal-close-btn" onclick="closeModal('seatBookingModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="seatBookingFormArea">
+          <p style="font-size: 0.9rem; color: #475569; margin-bottom: 16px;">
+            Reserve your quiet study carrel or workstation. You will be allotted a <strong style="color:#b45309;">15-minute grace period</strong> to reach the desk and scan the QR code to confirm check-in.
+          </p>
+
+          <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Desk Number:</span>
+              <strong id="seatModalDeskNo" style="font-size: 1.1rem; color: var(--primary);">S-101</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Reading Zone:</span>
+              <span id="seatModalZone" style="font-size: 0.85rem; font-weight: 600;">Quiet Study Zone A</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Amenities:</span>
+              <span id="seatModalAmenities" style="font-size: 0.85rem;">⚡ Power Socket • 🌐 LAN Port</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; display: block;">Select Study Duration:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+              <button type="button" class="floor-btn active duration-choice" data-min="60" style="padding:10px;">1 Hour</button>
+              <button type="button" class="floor-btn duration-choice" data-min="120" style="padding:10px;">2 Hours</button>
+              <button type="button" class="floor-btn duration-choice" data-min="240" style="padding:10px;">4 Hours</button>
+            </div>
+          </div>
+
+          <button id="btnConfirmSeatBooking" style="width: 100%; background: var(--primary); color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer;">
+            Generate Seat Check-In Pass 🎟️
+          </button>
+        </div>
+
+        <!-- Generated Pass View -->
+        <div id="seatPassGeneratedArea" style="display: none;">
+          <div class="seat-pass-card" id="printableSeatPass">
+            <div class="pass-header">
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 800; color: #065f46; text-transform: uppercase;">Assam Skill University</div>
+                <div style="font-size: 1rem; font-weight: 800;">Digital Seat Boarding Pass</div>
+              </div>
+              <div class="badge" style="background:#065f46; color:#fff; font-size:0.75rem; padding:4px 8px;">PASS CONFIRMED</div>
+            </div>
+
+            <div style="font-size: 2rem; font-weight: 900; color: #065f46;" id="passDeskNumber">S-105</div>
+            <div style="font-size: 0.82rem; color: #047857;" id="passZoneName">Floor 1 • Quiet Study Zone A</div>
+
+            <!-- Client-side SVG QR Code container -->
+            <div class="pass-qr-box" id="passQrContainer">
+              <!-- SVG QR generated here -->
+            </div>
+
+            <div style="font-size: 0.75rem; color: #475569; margin-bottom: 8px;">Check-In Pass Code:</div>
+            <div style="font-family: monospace; font-size: 1.2rem; font-weight: 800; color: #0f172a; letter-spacing: 1.5px; background: #fff; padding: 4px 10px; border-radius: 4px; display: inline-block; border: 1px solid #cbd5e1;" id="passCodeDisplay">
+              CHK-ASU-S105
+            </div>
+
+            <div style="margin-top: 14px; font-size: 0.8rem; color: #b45309; font-weight: 600;" id="passGraceNotice">
+              ⚠️ Check-in required within 15 minutes or seat will auto-release.
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 16px;">
+            <button id="btnPassCheckInNow" style="flex: 1; background: #059669; color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: 700; cursor: pointer;">
+              ✅ Confirm Arrival / Check In
+            </button>
+            <button id="btnPassPrint" onclick="window.print()" style="background: #f1f5f9; color: #334155; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-weight: 700; cursor: pointer;">
+              🖨️ Print Pass
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Offline Fallback Dataset & Application Engine -->
+  <script src="catalog_fallback.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
