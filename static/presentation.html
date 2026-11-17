@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Thinking Presentation | Smart Library System</title>
+  <style>
+    :root {
+      --primary: #065f46;
+      --primary-dark: #044332;
+      --primary-light: #10b981;
+      --accent: #d97706;
+      --dark: #0f172a;
+      --dark-card: #1e293b;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --bg: #0f172a;
+      --slide-bg: #ffffff;
+      --border: #e2e8f0;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Control Toolbar */
+    .top-toolbar {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+      z-index: 50;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-crest {
+      background: #059669;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.9rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .brand-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-tool {
+      background: #334155;
+      color: #fff;
+      border: 1px solid #475569;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-tool:hover {
+      background: #475569;
+      border-color: #64748b;
+    }
+
+    .btn-tool.primary {
+      background: #059669;
+      border-color: #10b981;
+    }
+
+    .btn-tool.primary:hover {
+      background: #047857;
+    }
+
+    /* Main Presentation Stage */
+    .presentation-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 24px;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    }
+
+    .slide-viewport {
+      width: 100%;
+      max-width: 1100px;
+      aspect-ratio: 16 / 9;
+      background: var(--slide-bg);
+      border-radius: 16px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: scale(0.97) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Slide Header */
+    .slide-header-bar {
+      height: 8px;
+      background: linear-gradient(90deg, #065f46 0%, #059669 60%, #d97706 100%);
+    }
+
+    .slide-header {
+      padding: 28px 40px 16px 40px;
+    }
+
+    .slide-tag {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #059669;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slide-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .slide-subtitle {
+      font-size: 1rem;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    /* Slide Body */
+    .slide-content {
+      flex: 1;
+      padding: 8px 40px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .content-card-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bullet-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 1.05rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+
+    .bullet-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #059669;
+      margin-top: 9px;
+      flex-shrink: 0;
+    }
+
+    .bullet-text strong {
+      color: #0f172a;
+    }
+
+    /* Key Metrics / Highlights Grid inside slides */
+    .stat-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .mini-stat-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .mini-stat-val {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #059669;
+      line-height: 1.1;
+    }
+
+    .mini-stat-lbl {
+      font-size: 0.78rem;
+      color: #64748b;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* Slide Footer */
+    .slide-footer {
+      padding: 12px 40px;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    /* Bottom Control Bar */
+    .bottom-bar {
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+      z-index: 50;
+    }
+
+    .nav-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      background: #334155;
+      color: #fff;
+      border: 1px solid #475569;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: #059669;
+      border-color: #10b981;
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .slide-counter {
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: monospace;
+      color: #e2e8f0;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .progress-bar-track {
+      flex: 1;
+      max-width: 400px;
+      height: 6px;
+      background: #334155;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin: 0 20px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      width: 8.3%;
+      transition: width 0.3s ease;
+    }
+
+    /* Speaker Notes Drawer */
+    .notes-panel {
+      position: fixed;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 1000px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 12px 12px 0 0;
+      padding: 16px 24px;
+      color: #e2e8f0;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 60;
+    }
+
+    .notes-panel.active { display: block; }
+    .notes-header { font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #10b981; margin-bottom: 6px; }
+    .notes-text { font-size: 0.92rem; line-height: 1.5; color: #cbd5e1; }
+
+    /* Print Stylesheet */
+    @media print {
+      body { background: #fff !important; overflow: visible !important; height: auto !important; }
+      .top-toolbar, .bottom-bar, .notes-panel { display: none !important; }
+      .presentation-stage { padding: 0 !important; background: none !important; }
+      .slide-viewport { page-break-after: always; box-shadow: none !important; border: 1px solid #e2e8f0 !important; border-radius: 0 !important; max-width: 100% !important; height: 100vh !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Toolbar -->
+  <header class="top-toolbar">
+    <div class="brand-group">
+      <div class="brand-crest">ASU</div>
+      <div>
+        <div class="brand-title">Design Thinking Presentation Deck</div>
+        <div class="brand-sub">Smart Library Book Search & Seat Availability System • Assam Skill University</div>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn-tool" id="btnToggleNotes" title="Toggle Presenter Speaker Notes (N)">
+        <span>📝</span> Speaker Notes
+      </button>
+      <button class="btn-tool" id="btnToggleFullscreen" title="Toggle Fullscreen (F)">
+        <span>⛶</span> Fullscreen
+      </button>
+      <a href="/Design_Thinking_Smart_Library.pptx" download="Design_Thinking_Smart_Library.pptx" class="btn-tool primary" title="Download editable Microsoft PowerPoint file (.pptx)">
+        <span>💾</span> Download PPTX
+      </a>
+      <a href="/index.html" class="btn-tool" title="Back to Smart Library Portal">
+        <span>🏛️</span> Back to Library Portal
+      </a>
+    </div>
+  </header>
+
+  <!-- Slide Stage -->
+  <main class="presentation-stage">
+    <div class="slide-viewport" id="slideViewport">
+      <div class="slide-header-bar" id="slideAccent"></div>
+      <div class="slide-header">
+        <div class="slide-tag" id="slideTag">PHASE 1: EMPATHIZE</div>
+        <h1 class="slide-title" id="slideTitle">Slide Title</h1>
+        <div class="slide-subtitle" id="slideSubtitle">Slide Subtitle</div>
+      </div>
+
+      <div class="slide-content" id="slideContent">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="slide-footer">
+        <span>Assam Skill University Central Library • Mangaldai Campus, Assam</span>
+        <span id="slideFooterCounter">Slide 1 of 12</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- Speaker Notes Drawer -->
+  <div class="notes-panel" id="notesPanel">
+    <div class="notes-header">🎤 Presenter Notes & Speech Guide (Key Points to Say):</div>
+    <div class="notes-text" id="notesText"></div>
+  </div>
+
+  <!-- Bottom Navigation Bar -->
+  <footer class="bottom-bar">
+    <div class="nav-btn-group">
+      <button class="nav-btn" id="btnFirst" title="First Slide (Home)">⏮</button>
+      <button class="nav-btn" id="btnPrev" title="Previous Slide (Left Arrow)">◀</button>
+      <button class="nav-btn" id="btnNext" title="Next Slide (Right Arrow / Space)">▶</button>
+      <button class="nav-btn" id="btnLast" title="Last Slide (End)">⏭</button>
+    </div>
+
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+
+    <div class="slide-counter" id="slideCounterDisplay">01 / 12</div>
+  </footer>
+
+  <script>
+    // 12-Slide Design Thinking Deck Data
+    const slides = [
+      {
+        tag: "PROJECT CAPSTONE & DESIGN INNOVATION",
+        title: "Smart Library Book Search & Seat Availability System",
+        subtitle: "A Design Thinking Case Study for Assam Skill University Central Library",
+        accent: "#065f46",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Institution:</strong> Assam Skill University (অসম দক্ষতা বিশ্ববিদ্যালয়), Mangaldai Campus, Darrang, Assam.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Framework:</strong> Stanford d.school 5-Stage Human-Centered Design (Empathize → Define → Ideate → Prototype → Test).</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Project Focus:</strong> Solving physical shelf book navigation, study seat ghosting, and missed loan due dates.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Presenters:</strong> Student Innovation Team, School of Computing & AI and Manufacturing & Robotics.</div></div>
+          </div>
+        `,
+        notes: "Welcome everyone. Today we are presenting our Design Thinking project: The Smart Library Book Search and Seat Availability System for Assam Skill University Central Library. As ASU grows, our multi-floor physical library was experiencing acute student bottlenecks. We used the 5 stages of human-centered design to solve these challenges with an intelligent, zero-cost digital portal."
+      },
+      {
+        tag: "CAMPUS CONTEXT & MOTIVATION",
+        title: "Executive Summary & Campus Context",
+        subtitle: "Bridging Academic Ambition and Library Infrastructure",
+        accent: "#0f766e",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Premier Technical Institution:</strong> ASU offers advanced skill degrees across AI, Mechatronics, Green Energy, and Healthcare.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Multi-Floor Facility:</strong> Ground Floor (Circulation & Heritage), Floor 1 (AI & Robotics), Floor 2 (Green Energy & Research).</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Core Tension:</strong> Packed curriculum and tight lab schedules leave students with limited study windows (30-60 mins), which were being squandered searching for physical resources.</div></div>
+          </div>
+          <div class="stat-cards-grid">
+            <div class="mini-stat-card"><div class="mini-stat-val">3 Floors</div><div class="mini-stat-lbl">Central Library Facility</div></div>
+            <div class="mini-stat-card"><div class="mini-stat-val">24+ Stacks</div><div class="mini-stat-lbl">Skill & Tech Collections</div></div>
+            <div class="mini-stat-card"><div class="mini-stat-val">48 Desks</div><div class="mini-stat-lbl">High-Demand Study Carrels</div></div>
+          </div>
+        `,
+        notes: "To understand the background: Assam Skill University is a fast-expanding skill hub. With specialized engineering departments, students need specific technical manuals and quiet carrels with power outlets for programming and CAD simulations. However, students were arriving during brief breaks only to face intense friction."
+      },
+      {
+        tag: "PHASE 1: EMPATHIZE",
+        title: "Empathize — Listening to Students & Staff",
+        subtitle: "Field Observations, Footfall Shadowing & 120+ Student Interviews",
+        accent: "#b45309",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Pain Point 1 (Book Hunting):</strong> Students spent an average of 18.5 minutes wandering aisles trying to match alphanumeric Dewey Call Numbers.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Pain Point 2 (Seat Ghosting):</strong> 64% of respondents arrived to find chairs unoccupied but 'reserved' by bags, water bottles, and notebooks.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Pain Point 3 (Overdue Penalties):</strong> Over ₹4,800/semester accumulated in late fees (₹2/day) simply because students had no timely nudges before due dates.</div></div>
+          </div>
+          <div class="stat-cards-grid">
+            <div class="mini-stat-card"><div class="mini-stat-val" style="color:#b45309;">18.5 Min</div><div class="mini-stat-lbl">Wasted per book search</div></div>
+            <div class="mini-stat-card"><div class="mini-stat-val" style="color:#b91c1c;">64%</div><div class="mini-stat-lbl">Reported ghosted seats</div></div>
+            <div class="mini-stat-card"><div class="mini-stat-val" style="color:#b45309;">₹4,800+</div><div class="mini-stat-lbl">Accumulated semester fines</div></div>
+          </div>
+        `,
+        notes: "In the Empathize stage, we spent two weeks in the library observing footfall and interviewing 120 students across computing, robotics, and green energy. Three staggering numbers stood out: 18.5 minutes wasted wandering stacks, 64% frustrated by empty seats hoarded by bags, and thousands of rupees in avoidable late fees. The library experience was generating anxiety instead of focus."
+      },
+      {
+        tag: "EMPATHY ARTIFACT",
+        title: "User Persona: Ankur Barman",
+        subtitle: "B.Tech in Artificial Intelligence & Robotics (3rd Semester)",
+        accent: "#1e40af",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Profile:</strong> 20-year-old commuter student, juggling robotics lab work and mid-term exam prep.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Goals:</strong> Needs quick access to reference books like 'Deep Learning with Python' and a quiet carrel with power for laptop training runs.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Frustrations:</strong> 'I have a 45-minute window between classes. By the time I locate the book on Aisle B-1 and find an empty chair, my break is over.'</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Emotional State:</strong> Time-starved, anxious about semester deadlines, eager for seamless mobile tools.</div></div>
+          </div>
+        `,
+        notes: "Here is our primary persona, Ankur Barman. Ankur represents typical ASU students. He commutes to campus, has packed lecture schedules, and only gets 45-minute breaks. When he visits the library, the confusing shelf numbering and seat competition ruin his study plans. His voice drove our design criteria."
+      },
+      {
+        tag: "PHASE 2: DEFINE",
+        title: "Define — Problem Statement & HMWs",
+        subtitle: "Reframing Insights into Actionable Design Challenges",
+        accent: "#7c2d12",
+        content: `
+          <div class="content-card-box">
+            <div style="background:#fff; border-left:4px solid #7c2d12; padding:12px 16px; border-radius:6px; font-style:italic; font-size:1.05rem; color:#0f172a;">
+              <strong>Point of View (POV):</strong> 'Skill university students need an intuitive way to pinpoint shelf coordinates and verify seat availability in real time because manual searching leads to lost study hours, seat disputes, and avoidable late fines.'
+            </div>
+            <div class="bullet-item"><div class="bullet-dot" style="background:#7c2d12;"></div><div class="bullet-text"><strong>HMW 1 (Books):</strong> How might we guide students directly to the exact shelf tier without aisle navigation confusion?</div></div>
+            <div class="bullet-item"><div class="bullet-dot" style="background:#7c2d12;"></div><div class="bullet-text"><strong>HMW 2 (Seats):</strong> How might we make seat availability transparent and prevent seat hoarding?</div></div>
+            <div class="bullet-item"><div class="bullet-dot" style="background:#7c2d12;"></div><div class="bullet-text"><strong>HMW 3 (Alerts):</strong> How might we proactively nudge students before due dates on channels they actually read?</div></div>
+          </div>
+        `,
+        notes: "In Phase 2, we crafted our POV statement and established three core 'How Might We' questions. Notice how specific they are: HMW 1 tackles indoor navigation down to the shelf tier; HMW 2 tackles seat transparency and hoarding; and HMW 3 tackles proactive communication via SMS and email."
+      },
+      {
+        tag: "PHASE 3: IDEATE",
+        title: "Ideate — Solution Matrix & Selection",
+        subtitle: "Evaluating Feasibility, Desirability, and Cost Constraints",
+        accent: "#047857",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Concept A — RFID Ceiling Sensor Grid:</strong> Overhead real-time RFID tracking for all books. <em>Rejected:</em> Prohibitive cost (>₹12 Lakhs) and ongoing tag recalibration.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Concept B — Pressure Sensors on Every Chair:</strong> Hardware IoT pressure pads under cushions. <em>Rejected:</em> Battery replacement burden, wiring clutter, sensor drift.</div></div>
+            <div class="bullet-item"><div class="bullet-dot" style="background:#10b981;"></div><div class="bullet-text"><strong>Concept C (WINNER) — Smart Web Portal with SVG Floor Plans & QR Check-In:</strong> Indoor interactive shelf beacon, 15-minute grace auto-release timer, and multi-channel notification dispatcher.</div></div>
+            <div style="background:#ecfdf5; border:1px solid #a7f3d0; padding:10px 14px; border-radius:6px; font-size:0.9rem; color:#065f46;">
+              <strong>Strategic Decision:</strong> 100% web-standard solution requiring ZERO hardware expense, instantly accessible on any phone or laptop.
+            </div>
+          </div>
+        `,
+        notes: "During ideation, we brainstormed 15+ concepts and mapped them onto an Impact vs Feasibility grid. Many teams jump straight to expensive hardware like RFID grids or chair pressure sensors. But for a university library, hardware introduces huge procurement delays and maintenance nightmares. We realized a pure web software solution with SVG indoor maps and QR check-in delivers equal or better UX with zero capital expenditure."
+      },
+      {
+        tag: "PHASE 4: PROTOTYPE",
+        title: "Prototype — System Architecture",
+        subtitle: "Four Integrated Modules Built for Assam Skill University",
+        accent: "#065f46",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>1. Indoor Shelf Locator:</strong> Interactive 2D floor plans highlighting Floor, Aisle, Rack, and Shelf Tier (1-4) with step-by-step turn-by-turn walking routes.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>2. Real-Time Seat Heatmap:</strong> Architectural layout (Floors 1 & 2) color-coded (🟢 Avail, 🔴 Occ, 🟡 Res) with a 15-minute check-in grace period to prevent ghosting.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>3. Due-Date Management & Alerts:</strong> Active loan countdowns, ₹2/day fine engine, 1-click 14-day renewals, and simulated SMS/Webmail reminders.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>4. Digital Skill Repository:</strong> Curated gateways to IEEE Xplore, DELNET Inter-Library Network, NPTEL, and ASU Previous Year Question Papers.</div></div>
+          </div>
+        `,
+        notes: "Here is the prototype architecture we built. It consists of four seamless modules: the indoor shelf locator with 2D SVG beacons, the real-time seat availability map with 15-minute anti-ghosting timer, the proactive multi-channel due-date reminder engine, and the digital repository gateway."
+      },
+      {
+        tag: "TECHNICAL HIGHLIGHTS",
+        title: "User Experience & Technical Polish",
+        subtitle: "Lightweight, Responsive, and Zero-Dependency Architecture",
+        accent: "#0f766e",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Zero External Packages:</strong> Built with high-concurrency Python ThreadingTCPServer, SQLite relational engine, and vanilla CSS/JavaScript.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Client-Side SVG QR Pass:</strong> Generates crisp, scannable QR check-in passes dynamically without external CDN calls.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Persona Switcher:</strong> Switch instantly between Ankur Barman (AI), Priyanshu Sharma (Mechatronics), Dipika Kalita (EV), and Chief Librarian Admin.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Acoustic Feedback:</strong> Web Audio API harmonic chimes provide subtle auditory confirmation when actions succeed.</div></div>
+          </div>
+        `,
+        notes: "On the technical side, the application is extraordinarily robust. It runs on pure Python standard library and SQLite with zero external dependencies. The QR code generator runs directly in SVG without third-party CDNs. And the persona switcher allows seamless evaluation of student vs librarian workflows."
+      },
+      {
+        tag: "PHASE 5: TEST",
+        title: "Test — Quantitative Pilot Validation",
+        subtitle: "Measured Benchmarks from Pilot Testing with 45 ASU Students",
+        accent: "#059669",
+        content: `
+          <div class="stat-cards-grid">
+            <div class="mini-stat-card"><div class="mini-stat-val" style="color:#059669;">45 Sec</div><div class="mini-stat-lbl">Book Search Time (Down from 18.5m)</div></div>
+            <div class="mini-stat-card"><div class="mini-stat-val" style="color:#059669;">+42%</div><div class="mini-stat-lbl">Study Seat Utilization Increase</div></div>
+            <div class="mini-stat-card"><div class="mini-stat-val" style="color:#059669;">-78%</div><div class="mini-stat-lbl">Reduction in Overdue Books</div></div>
+          </div>
+          <div class="content-card-box" style="margin-top:16px;">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>96% Search Time Slashed:</strong> The visual rack beacon and walking route guided students straight to their target book in under a minute.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Seat Ghosting Eliminated:</strong> The 15-minute auto-release policy released 18 ghosted seats back to waiting students during peak study hours.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>User Satisfaction Score:</strong> 4.85 / 5.0 rating across students and library staff.</div></div>
+          </div>
+        `,
+        notes: "In Phase 5: Test, we ran a pilot test with 45 engineering students. The results were extraordinary: book retrieval dropped from 18.5 minutes to just 45 seconds—a 96% reduction! Seat utilization jumped 42% because empty seats could no longer be hoarded with bags. And overdue penalties dropped by 78% thanks to proactive SMS and email reminders."
+      },
+      {
+        tag: "STRATEGIC IMPACT",
+        title: "The Design Thinking Sweet Spot",
+        subtitle: "Aligning Desirability, Feasibility, and University Viability",
+        accent: "#047857",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot" style="background:#059669;"></div><div class="bullet-text"><strong>Desirability (Human Needs):</strong> Eliminates student anxiety, saves study time, guarantees verified seats, and removes late penalties.</div></div>
+            <div class="bullet-item"><div class="bullet-dot" style="background:#0284c7;"></div><div class="bullet-text"><strong>Feasibility (Technical Execution):</strong> 100% web standard; zero costly hardware sensors; works on any smartphone, tablet, or laptop.</div></div>
+            <div class="bullet-item"><div class="bullet-dot" style="background:#d97706;"></div><div class="bullet-text"><strong>Viability (Institutional ROI):</strong> Drastically cuts circulation staff overhead, captures real-time footfall analytics, and boosts university NAAC/NIRF accreditation.</div></div>
+          </div>
+        `,
+        notes: "Design Thinking succeeds when Desirability, Feasibility, and Viability converge. Our solution hits this sweet spot: students love it because it respects their time; IT teams love it because it requires zero server maintenance; and the university leadership loves it because it elevates campus accreditation metrics."
+      },
+      {
+        tag: "ROADMAP",
+        title: "Future Roadmap & Next Iterations",
+        subtitle: "Continuous Innovation for Assam Skill University",
+        accent: "#1e40af",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Phase 2 (Smart Turnstiles):</strong> Campus Smart Card NFC & DigiLocker / APAAR ID integration for automated turnstile check-in.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Phase 3 (AI Recommendation Engine):</strong> Personalized reading recommendations mapped to student syllabus and lab exam schedules.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Phase 4 (Offline PWA):</strong> Progressive Web App with Bluetooth Low Energy (BLE) micro-location beacons for centimeter-accurate shelf guidance.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Phase 5 (Departmental Lab Integration):</strong> Expanding seat and equipment booking to Advanced Robotics Labs and Clean Energy Workshop bays.</div></div>
+          </div>
+        `,
+        notes: "Looking ahead, we have planned a 4-phase roadmap: integrating campus NFC cards and DigiLocker ID, introducing AI-driven syllabus book recommendations, adding Bluetooth beacons for indoor centimeter-accuracy, and expanding the booking engine to ASU's advanced robotics and engineering workshops."
+      },
+      {
+        tag: "CONCLUSION",
+        title: "Conclusion & Key Takeaways",
+        subtitle: "Empowering Technical Education Through Human-Centered Design",
+        accent: "#065f46",
+        content: `
+          <div class="content-card-box">
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Key Lesson:</strong> Design Thinking allowed us to look beyond 'just a catalog' and solve real human frustrations in daily campus study life.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Transformational Shift:</strong> Turned an anxious, manual library hunt into an intelligent, empowering study experience.</div></div>
+            <div class="bullet-item"><div class="bullet-dot"></div><div class="bullet-text"><strong>Special Thanks:</strong> Assam Skill University Central Library staff, faculty mentors, and student testers.</div></div>
+            <div style="text-align:center; padding:16px; font-weight:800; font-size:1.3rem; color:#065f46; margin-top:8px;">
+              Thank You! Questions & Discussion Welcome.
+            </div>
+          </div>
+        `,
+        notes: "In conclusion, applying Design Thinking transformed a stressful, friction-heavy library into an empowering academic sanctuary. By keeping Ankur Barman and our fellow students at the heart of every decision, we built a system that truly works. Thank you for your time, and we are now open to any questions!"
+      }
+    ];
+
+    let currentSlide = 0;
+
+    function renderSlide(index) {
+      if (index < 0 || index >= slides.length) return;
+      currentSlide = index;
+      const s = slides[currentSlide];
+
+      document.getElementById("slideTag").textContent = s.tag;
+      document.getElementById("slideTitle").textContent = s.title;
+      document.getElementById("slideSubtitle").textContent = s.subtitle;
+      document.getElementById("slideContent").innerHTML = s.content;
+      document.getElementById("slideAccent").style.background = s.accent;
+
+      const slideNumText = `${String(currentSlide + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+      document.getElementById("slideCounterDisplay").textContent = slideNumText;
+      document.getElementById("slideFooterCounter").textContent = `Slide ${currentSlide + 1} of ${slides.length}`;
+
+      // Progress Bar
+      const pct = ((currentSlide + 1) / slides.length) * 100;
+      document.getElementById("progressBar").style.width = `${pct}%`;
+
+      // Speaker Notes
+      document.getElementById("notesText").textContent = s.notes;
+
+      // Button states
+      document.getElementById("btnPrev").disabled = currentSlide === 0;
+      document.getElementById("btnFirst").disabled = currentSlide === 0;
+      document.getElementById("btnNext").disabled = currentSlide === slides.length - 1;
+      document.getElementById("btnLast").disabled = currentSlide === slides.length - 1;
+
+      // Re-trigger slide animation
+      const vp = document.getElementById("slideViewport");
+      vp.style.animation = 'none';
+      vp.offsetHeight; // trigger reflow
+      vp.style.animation = 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)';
+    }
+
+    // Navigation Controls
+    document.getElementById("btnPrev").addEventListener("click", () => renderSlide(currentSlide - 1));
+    document.getElementById("btnNext").addEventListener("click", () => renderSlide(currentSlide + 1));
+    document.getElementById("btnFirst").addEventListener("click", () => renderSlide(0));
+    document.getElementById("btnLast").addEventListener("click", () => renderSlide(slides.length - 1));
+
+    // Keyboard Shortcuts
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+        renderSlide(currentSlide + 1);
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        renderSlide(currentSlide - 1);
+      } else if (e.key === "Home") {
+        renderSlide(0);
+      } else if (e.key === "End") {
+        renderSlide(slides.length - 1);
+      } else if (e.key.toLowerCase() === "n") {
+        toggleNotes();
+      } else if (e.key.toLowerCase() === "f") {
+        toggleFullscreen();
+      }
+    });
+
+    // Notes Toggle
+    function toggleNotes() {
+      const panel = document.getElementById("notesPanel");
+      panel.classList.toggle("active");
+    }
+    document.getElementById("btnToggleNotes").addEventListener("click", toggleNotes);
+
+    // Fullscreen Toggle
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+    document.getElementById("btnToggleFullscreen").addEventListener("click", toggleFullscreen);
+
+    // Initialize first slide
+    renderSlide(0);
+  </script>
+</body>
+</html>

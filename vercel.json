@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "static/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/Design_Thinking_Smart_Library.pptx",
+      "dest": "static/Design_Thinking_Smart_Library.pptx"
+    },
+    {
+      "src": "/presentation.html",
+      "dest": "static/presentation.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "static/$1"
+    }
+  ]
+}
