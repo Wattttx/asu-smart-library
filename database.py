@@ -9,30 +9,15 @@ import os
 import json
 from datetime import datetime, timedelta
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "library.db")
+import tempfile
+
+if os.environ.get("VERCEL") or not os.access(os.path.dirname(os.path.abspath(__file__)), os.W_OK):
+    DB_PATH = os.path.join(tempfile.gettempdir(), "library.db")
+else:
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "library.db")
 
 def get_db():
-    target_path = DB_PATH
-    # In serverless environments like Vercel or AWS Lambda, the root filesystem is read-only.
-    # We copy the seeded database to /tmp so write transactions (bookings, loans) succeed.
-    if os.environ.get("VERCEL") or not os.access(os.path.dirname(DB_PATH) or ".", os.W_OK):
-        tmp_db = "/tmp/library.db"
-        if not os.path.exists(tmp_db):
-            import shutil
-            if os.path.exists(DB_PATH):
-                shutil.copyfile(DB_PATH, tmp_db)
-            else:
-                # Initialize fresh in /tmp if template missing
-                target_path = tmp_db
-                conn = sqlite3.connect(tmp_db)
-                conn.row_factory = sqlite3.Row
-                conn.close()
-                init_db_path(tmp_db)
-                seed_data_path(tmp_db, force=True)
-                return sqlite3.connect(tmp_db)
-        target_path = tmp_db
-
-    conn = sqlite3.connect(target_path)
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 

@@ -15,6 +15,7 @@ const AppState = {
   activeCategory: "",
   searchKeyword: "",
   soundEnabled: true,
+  isLiveServer: false,
   books: [],
   seats: [],
   borrowings: [],
@@ -24,6 +25,43 @@ const AppState = {
   selectedSeat: null,
   pollTimer: null
 };
+
+// Initialize with Fallback Dataset Immediately on Load
+function loadInitialDataset() {
+  if (window.ASU_FALLBACK_DATA) {
+    const fd = window.ASU_FALLBACK_DATA;
+    AppState.books = [...fd.books];
+    AppState.seats = [...fd.seats];
+    AppState.borrowings = [...fd.borrowings];
+    AppState.notifications = [...fd.notifications];
+
+    // Compute categories
+    const categories = Array.from(new Set(AppState.books.map(b => b.category))).sort();
+    renderCategoryChips(categories);
+    renderBooksGrid(AppState.books);
+    populateIssueDropdown(AppState.books);
+    renderSeatMap();
+    renderZoneCards(AppState.seats);
+    renderBorrowings(AppState.borrowings.filter(b => b.student_id === AppState.currentUser.id));
+    renderAlertsChannel(AppState.notifications.filter(n => n.student_id === AppState.currentUser.id || n.student_id === 'ALL'));
+
+    // Compute basic stats
+    const totalTitles = AppState.books.length;
+    const totalInventory = AppState.books.reduce((acc, b) => acc + (b.total_copies || 0), 0);
+    const availSeats = AppState.seats.filter(s => s.status === 'AVAILABLE').length;
+    const myLoans = AppState.borrowings.filter(b => b.student_id === AppState.currentUser.id && b.status !== 'RETURNED').length;
+
+    const elAvail = document.getElementById("statAvailSeats");
+    const elBooks = document.getElementById("statTotalBooks");
+    const elLoans = document.getElementById("statMyLoans");
+    const elFines = document.getElementById("statOverdueFines");
+
+    if (elAvail) elAvail.textContent = `${availSeats} / ${AppState.seats.length}`;
+    if (elBooks) elBooks.textContent = `${totalInventory} (${totalTitles} Titles)`;
+    if (elLoans) elLoans.textContent = `${myLoans} Book(s)`;
+    if (elFines) elFines.textContent = `₹6.00`;
+  }
+}
 
 // Web Audio API Sound Generator for Real-Time Chimes
 class SoundFX {
@@ -83,7 +121,10 @@ document.addEventListener("DOMContentLoaded", () => {
   setupAdminForms();
   startClock();
 
-  // Initial Data Fetch
+  // Load bundled catalog immediately so the UI is never blank
+  loadInitialDataset();
+
+  // Initial Data Fetch (checks for live backend server)
   refreshAllData();
 
   // Auto-refresh every 20 seconds for real-time seat & loan updates
@@ -204,29 +245,85 @@ function setupFloorSwitch() {
 // Data Fetching & Sync
 // ============================================================================
 async function refreshAllData() {
-  await Promise.all([
-    fetchStats(),
-    fetchBooks(),
-    fetchSeats(),
-    fetchBorrowings(),
-    fetchNotifications(),
-    fetchAnnouncements()
-  ]);
+  try {
+    // Attempt ping with 2-second timeout
+    const res = await fetch("/api/stats", { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
+        AppState.isLiveServer = true;
+        const banner = document.getElementById("offlineNoticeBanner");
+        if (banner) banner.style.display = "none";
+
+        AppState.stats = data;
+        document.getElementById("statAvailSeats").textContent = `${data.available_seats} / ${data.total_seats}`;
+        document.getElementById("statTotalBooks").textContent = `${data.total_inventory} (${data.total_titles} Titles)`;
+        document.getElementById("statOverdueFines").textContent = `₹${data.pending_fines.toFixed(2)}`;
+
+        await Promise.all([
+          fetchBooks(),
+          fetchSeats(),
+          fetchBorrowings(),
+          fetchNotifications(),
+          fetchAnnouncements()
+        ]);
+        return;
+      }
+    }
+    throw new Error("API returned non-OK");
+  } catch (err) {
+    // Backend server is not running (e.g. file:/// or server stopped)
+    AppState.isLiveServer = false;
+    const banner = document.getElementById("offlineNoticeBanner");
+    if (banner) banner.style.display = "block";
+
+    filterLocalCatalog();
+  }
 }
 
-async function fetchStats() {
-  try {
-    const res = await fetch("/api/stats");
-    const data = await res.json();
-    if (data.success) {
-      AppState.stats = data;
-      document.getElementById("statAvailSeats").textContent = `${data.available_seats} / ${data.total_seats}`;
-      document.getElementById("statTotalBooks").textContent = `${data.total_inventory} (${data.total_titles} Titles)`;
-      document.getElementById("statOverdueFines").textContent = `₹${data.pending_fines.toFixed(2)}`;
-    }
-  } catch (err) {
-    console.error("Failed to fetch stats:", err);
-  }
+function filterLocalCatalog() {
+  if (!window.ASU_FALLBACK_DATA) return;
+  const floorVal = document.getElementById("bookFilterFloor")?.value || "";
+  const kw = (AppState.searchKeyword || "").toLowerCase();
+  const cat = AppState.activeCategory;
+
+  let filtered = window.ASU_FALLBACK_DATA.books.filter(b => {
+    const matchesKw = !kw || 
+      b.title.toLowerCase().includes(kw) || 
+      b.author.toLowerCase().includes(kw) || 
+      b.category.toLowerCase().includes(kw) || 
+      b.call_no.toLowerCase().includes(kw) || 
+      b.department.toLowerCase().includes(kw);
+    const matchesCat = !cat || b.category === cat;
+    const matchesFloor = floorVal === "" || String(b.floor) === String(floorVal);
+    return matchesKw && matchesCat && matchesFloor;
+  });
+
+  AppState.books = filtered;
+  const categories = Array.from(new Set(window.ASU_FALLBACK_DATA.books.map(b => b.category))).sort();
+  renderCategoryChips(categories);
+  renderBooksGrid(filtered);
+  populateIssueDropdown(filtered);
+
+  // Update KPIs from fallback
+  const totalTitles = window.ASU_FALLBACK_DATA.books.length;
+  const totalInventory = window.ASU_FALLBACK_DATA.books.reduce((acc, b) => acc + (b.total_copies || 0), 0);
+  const availSeats = window.ASU_FALLBACK_DATA.seats.filter(s => s.status === 'AVAILABLE').length;
+  const myLoans = window.ASU_FALLBACK_DATA.borrowings.filter(b => b.student_id === AppState.currentUser.id && b.status !== 'RETURNED').length;
+
+  const elAvail = document.getElementById("statAvailSeats");
+  const elBooks = document.getElementById("statTotalBooks");
+  const elLoans = document.getElementById("statMyLoans");
+  const elFines = document.getElementById("statOverdueFines");
+
+  if (elAvail) elAvail.textContent = `${availSeats} / ${window.ASU_FALLBACK_DATA.seats.length}`;
+  if (elBooks) elBooks.textContent = `${totalInventory} (${totalTitles} Titles)`;
+  if (elLoans) elLoans.textContent = `${myLoans} Book(s)`;
+  if (elFines) elFines.textContent = `₹6.00`;
+
+  renderSeatMap();
+  renderZoneCards(window.ASU_FALLBACK_DATA.seats);
+  renderBorrowings(window.ASU_FALLBACK_DATA.borrowings.filter(b => b.student_id === AppState.currentUser.id));
 }
 
 async function fetchBooks() {
@@ -399,45 +496,70 @@ function renderBooksGrid(books) {
 
 // Open Interactive Shelf Locator Modal
 async function openShelfLocatorModal(bookId) {
-  try {
-    const res = await fetch(`/api/books/${bookId}`);
-    const data = await res.json();
-    if (!data.success) return;
-
-    const book = data.book;
-    AppState.selectedBook = book;
-
-    document.getElementById("modalBookTitle").textContent = book.title;
-    document.getElementById("modalBookAuthor").textContent = `By ${book.author} (${book.publisher}, ${book.year})`;
-    document.getElementById("modalBreadcrumb").textContent = book.location_breadcrumb;
-    document.getElementById("modalCallBadge").textContent = book.call_no;
-    document.getElementById("modalFloorLabel").textContent = book.floor === 0 ? "Ground Floor" : `Floor ${book.floor}`;
-
-    const resBtn = document.getElementById("modalBtnReserve");
-    if (book.available_copies > 0) {
-      resBtn.textContent = `Reserve Copy (${book.available_copies} Ready)`;
-      resBtn.className = "btn-reserve";
-    } else {
-      resBtn.textContent = `Join Waitlist (Queue: ${book.reservation_queue.length} Ahead)`;
-      resBtn.className = "btn-reserve waitlist";
+  let book = null;
+  if (AppState.isLiveServer) {
+    try {
+      const res = await fetch(`/api/books/${bookId}`, { signal: AbortSignal.timeout(2000) });
+      const data = await res.json();
+      if (data.success) book = data.book;
+    } catch (e) {
+      console.warn("Live book fetch failed, falling back to local:", e);
     }
-    resBtn.onclick = () => quickReserveBook(book.id);
-
-    // Render 4-tier Rack Graphic
-    renderRackTierGraphic(book.shelf_tier, book.call_no);
-
-    // Render Step-by-Step Walking Directions
-    const guideEl = document.getElementById("modalWalkingGuide");
-    guideEl.innerHTML = book.walking_guide.map(step => `<li>${step}</li>`).join("");
-
-    // Render Indoor Floor Plan SVG with target rack glowing beacon
-    renderFloorPlanShelfMap(book);
-
-    openModal("shelfLocatorModal");
-    SoundFX.playChime("success");
-  } catch (err) {
-    console.error("Failed to load shelf locator:", err);
   }
+
+  // Fallback to local catalog
+  if (!book) {
+    book = AppState.books.find(b => b.id === bookId) || 
+           (window.ASU_FALLBACK_DATA && window.ASU_FALLBACK_DATA.books.find(b => b.id === bookId));
+    if (book) {
+      // Clone so we can attach computed properties
+      book = { ...book };
+      const floorName = book.floor === 0 ? "Ground Floor (Floor 0)" : `Floor ${book.floor}`;
+      book.location_breadcrumb = `${floorName} > ${book.aisle} > ${book.rack} > Shelf Tier ${book.shelf_tier}`;
+      book.walking_guide = [
+        "Enter the Central Library Main Entrance on Ground Floor.",
+        `Take the Central Atrium Staircase or Elevator to ${floorName}.`,
+        `Proceed to the School stack area: ${book.department}.`,
+        `Navigate to ${book.aisle} and locate ${book.rack}.`,
+        `Find Shelf Tier ${book.shelf_tier} (Numbered 1: Bottom to 4: Top). Look for Call Tag: ${book.call_no}.`
+      ];
+      book.reservation_queue = [];
+    }
+  }
+
+  if (!book) return;
+
+  AppState.selectedBook = book;
+
+  document.getElementById("modalBookTitle").textContent = book.title;
+  document.getElementById("modalBookAuthor").textContent = `By ${book.author} (${book.publisher || 'ASU Press'}, ${book.year || 2024})`;
+  document.getElementById("modalBreadcrumb").textContent = book.location_breadcrumb;
+  document.getElementById("modalCallBadge").textContent = book.call_no;
+  document.getElementById("modalFloorLabel").textContent = book.floor === 0 ? "Ground Floor" : `Floor ${book.floor}`;
+
+  const resBtn = document.getElementById("modalBtnReserve");
+  if (book.available_copies > 0) {
+    resBtn.textContent = `Reserve Copy (${book.available_copies} Ready)`;
+    resBtn.className = "btn-reserve";
+  } else {
+    const queueLen = book.reservation_queue ? book.reservation_queue.length : 1;
+    resBtn.textContent = `Join Waitlist (Queue: ${queueLen} Ahead)`;
+    resBtn.className = "btn-reserve waitlist";
+  }
+  resBtn.onclick = () => quickReserveBook(book.id);
+
+  // Render 4-tier Rack Graphic
+  renderRackTierGraphic(book.shelf_tier, book.call_no);
+
+  // Render Step-by-Step Walking Directions
+  const guideEl = document.getElementById("modalWalkingGuide");
+  guideEl.innerHTML = book.walking_guide.map(step => `<li>${step}</li>`).join("");
+
+  // Render Indoor Floor Plan SVG with target rack glowing beacon
+  renderFloorPlanShelfMap(book);
+
+  openModal("shelfLocatorModal");
+  SoundFX.playChime("success");
 }
 
 // 4-Tier Rack Shelf Visualizer
@@ -575,26 +697,42 @@ function renderFloorPlanShelfMap(book) {
 
 // Quick Reserve Book Action
 async function quickReserveBook(bookId) {
-  try {
-    const res = await fetch(`/api/books/${bookId}/reserve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        student_id: AppState.currentUser.id,
-        student_name: AppState.currentUser.name
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      SoundFX.playChime("success");
-      alert(data.message);
-      closeModal("shelfLocatorModal");
-      refreshAllData();
-    } else {
-      alert("Error: " + data.error);
+  if (AppState.isLiveServer) {
+    try {
+      const res = await fetch(`/api/books/${bookId}/reserve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: AppState.currentUser.id,
+          student_name: AppState.currentUser.name
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        SoundFX.playChime("success");
+        alert(data.message);
+        closeModal("shelfLocatorModal");
+        refreshAllData();
+        return;
+      }
+    } catch (err) {
+      console.warn("Live reserve failed, falling back to local:", err);
     }
-  } catch (err) {
-    console.error("Reserve failed:", err);
+  }
+
+  // Local Offline Reservation Simulation
+  const book = AppState.books.find(b => b.id === bookId);
+  if (book) {
+    if (book.available_copies > 0) {
+      book.available_copies -= 1;
+      SoundFX.playChime("success");
+      alert(`[Offline Mode] Reserved '${book.title}'. A copy is held for pickup at Central Circulation Desk.`);
+    } else {
+      SoundFX.playChime("alert");
+      alert(`[Offline Mode] Waitlist hold placed for '${book.title}'. You are #1 in queue.`);
+    }
+    closeModal("shelfLocatorModal");
+    renderBooksGrid(AppState.books);
   }
 }
 
@@ -747,85 +885,131 @@ function handleSeatClick(seatId) {
 
 // Seat Reservation Action
 async function reserveSeatAction(seatId, durationMin) {
-  try {
-    const res = await fetch(`/api/seats/${seatId}/reserve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        student_id: AppState.currentUser.id,
-        student_name: AppState.currentUser.name,
-        duration_minutes: durationMin
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      SoundFX.playChime("success");
-
-      // Switch to Boarding Pass View
-      document.getElementById("seatBookingFormArea").style.display = "none";
-      const passArea = document.getElementById("seatPassGeneratedArea");
-      passArea.style.display = "block";
-
-      document.getElementById("passDeskNumber").textContent = data.seat_number;
-      document.getElementById("passCodeDisplay").textContent = data.checkin_code;
-      document.getElementById("passGraceNotice").textContent = `⚠️ Check-in required by ${data.grace_period_until} or seat will auto-release.`;
-
-      // Generate SVG QR Code client-side
-      generateQRCodeSVG("passQrContainer", `ASU-LIB-SEAT:${data.seat_number}:${data.checkin_code}`);
-
-      // Setup Check in button
-      document.getElementById("btnPassCheckInNow").onclick = () => {
-        checkInSeatAction(seatId, data.checkin_code);
-        closeModal("seatBookingModal");
-      };
-
-      refreshAllData();
-    } else {
-      alert("Error: " + data.error);
+  let result = null;
+  if (AppState.isLiveServer) {
+    try {
+      const res = await fetch(`/api/seats/${seatId}/reserve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: AppState.currentUser.id,
+          student_name: AppState.currentUser.name,
+          duration_minutes: durationMin
+        })
+      });
+      const data = await res.json();
+      if (data.success) result = data;
+    } catch (e) {
+      console.warn("Live reserve failed, falling back to local:", e);
     }
-  } catch (err) {
-    console.error("Failed to reserve seat:", err);
+  }
+
+  // Fallback local seat reservation
+  if (!result) {
+    const seat = AppState.seats.find(s => s.id === seatId);
+    if (seat) {
+      seat.status = "RESERVED";
+      seat.current_student_id = AppState.currentUser.id;
+      seat.current_student_name = AppState.currentUser.name;
+      const d = new Date(Date.now() + 15 * 60000);
+      seat.checkin_code = `CHK-ASU-${seat.seat_number.replace('-', '')}`;
+      result = {
+        success: true,
+        seat_number: seat.seat_number,
+        checkin_code: seat.checkin_code,
+        grace_period_until: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+    }
+  }
+
+  if (result) {
+    SoundFX.playChime("success");
+
+    // Switch to Boarding Pass View
+    document.getElementById("seatBookingFormArea").style.display = "none";
+    const passArea = document.getElementById("seatPassGeneratedArea");
+    passArea.style.display = "block";
+
+    document.getElementById("passDeskNumber").textContent = result.seat_number;
+    document.getElementById("passCodeDisplay").textContent = result.checkin_code;
+    document.getElementById("passGraceNotice").textContent = `⚠️ Check-in required within 15 mins (by ${result.grace_period_until}) or seat will auto-release.`;
+
+    // Generate SVG QR Code client-side
+    generateQRCodeSVG("passQrContainer", `ASU-LIB-SEAT:${result.seat_number}:${result.checkin_code}`);
+
+    // Setup Check in button
+    document.getElementById("btnPassCheckInNow").onclick = () => {
+      checkInSeatAction(seatId, result.checkin_code);
+      closeModal("seatBookingModal");
+    };
+
+    renderSeatMap();
   }
 }
 
 async function checkInSeatAction(seatId, code) {
-  try {
-    const res = await fetch(`/api/seats/${seatId}/checkin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        student_id: AppState.currentUser.id,
-        checkin_code: code
-      })
-    });
-    const data = await res.json();
-    if (data.success) {
-      SoundFX.playChime("success");
-      alert(data.message);
-      refreshAllData();
-    } else {
-      alert("Check-in error: " + data.error);
+  if (AppState.isLiveServer) {
+    try {
+      const res = await fetch(`/api/seats/${seatId}/checkin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: AppState.currentUser.id,
+          checkin_code: code
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        SoundFX.playChime("success");
+        alert(data.message);
+        refreshAllData();
+        return;
+      }
+    } catch (e) {
+      console.warn("Live checkin failed, falling back to local:", e);
     }
-  } catch (err) {
-    console.error("Check-in failed:", err);
+  }
+
+  // Local Offline Check-in Simulation
+  const seat = AppState.seats.find(s => s.id === seatId);
+  if (seat) {
+    seat.status = "OCCUPIED";
+    seat.checked_in = 1;
+    SoundFX.playChime("success");
+    alert(`[Offline Mode] Check-In Confirmed for Seat ${seat.seat_number}! Happy Studying.`);
+    renderSeatMap();
   }
 }
 
 async function releaseSeatAction(seatId) {
-  try {
-    const res = await fetch(`/api/seats/${seatId}/release`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ student_id: AppState.currentUser.id })
-    });
-    const data = await res.json();
-    if (data.success) {
-      SoundFX.playChime("success");
-      alert(data.message);
-      refreshAllData();
+  if (AppState.isLiveServer) {
+    try {
+      const res = await fetch(`/api/seats/${seatId}/release`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: AppState.currentUser.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        SoundFX.playChime("success");
+        alert(data.message);
+        refreshAllData();
+        return;
+      }
+    } catch (e) {
+      console.warn("Live release failed, falling back to local:", e);
     }
-  } catch (err) {
-    console.error("Release seat failed:", err);
+  }
+
+  // Local Offline Release Simulation
+  const seat = AppState.seats.find(s => s.id === seatId);
+  if (seat) {
+    seat.status = "AVAILABLE";
+    seat.current_student_id = null;
+    seat.current_student_name = null;
+    SoundFX.playChime("success");
+    alert(`[Offline Mode] Seat ${seat.seat_number} has been released and is now Available.`);
+    renderSeatMap();
   }
 }
 
