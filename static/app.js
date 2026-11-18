@@ -26,41 +26,47 @@ const AppState = {
   pollTimer: null
 };
 
+// Storage Keys for persistent client-side state
+const STORAGE_PREFIX = "ASU_SMART_LIB_";
+
 // Initialize with Fallback Dataset Immediately on Load
 function loadInitialDataset() {
-  if (window.ASU_FALLBACK_DATA) {
-    const fd = window.ASU_FALLBACK_DATA;
-    AppState.books = [...fd.books];
-    AppState.seats = [...fd.seats];
-    AppState.borrowings = [...fd.borrowings];
-    AppState.notifications = [...fd.notifications];
+  try {
+    const sBooks = localStorage.getItem(STORAGE_PREFIX + "BOOKS");
+    const sSeats = localStorage.getItem(STORAGE_PREFIX + "SEATS");
+    const sLoans = localStorage.getItem(STORAGE_PREFIX + "LOANS");
+    const sNotifs = localStorage.getItem(STORAGE_PREFIX + "NOTIFS");
 
-    // Compute categories
-    const categories = Array.from(new Set(AppState.books.map(b => b.category))).sort();
-    renderCategoryChips(categories);
-    renderBooksGrid(AppState.books);
-    populateIssueDropdown(AppState.books);
-    renderSeatMap();
-    renderZoneCards(AppState.seats);
-    renderBorrowings(AppState.borrowings.filter(b => b.student_id === AppState.currentUser.id));
-    renderAlertsChannel(AppState.notifications.filter(n => n.student_id === AppState.currentUser.id || n.student_id === 'ALL'));
+    if (sBooks) AppState.books = JSON.parse(sBooks);
+    else if (window.ASU_FALLBACK_DATA) AppState.books = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.books));
 
-    // Compute basic stats
-    const totalTitles = AppState.books.length;
-    const totalInventory = AppState.books.reduce((acc, b) => acc + (b.total_copies || 0), 0);
-    const availSeats = AppState.seats.filter(s => s.status === 'AVAILABLE').length;
-    const myLoans = AppState.borrowings.filter(b => b.student_id === AppState.currentUser.id && b.status !== 'RETURNED').length;
+    if (sSeats) AppState.seats = JSON.parse(sSeats);
+    else if (window.ASU_FALLBACK_DATA) AppState.seats = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.seats));
 
-    const elAvail = document.getElementById("statAvailSeats");
-    const elBooks = document.getElementById("statTotalBooks");
-    const elLoans = document.getElementById("statMyLoans");
-    const elFines = document.getElementById("statOverdueFines");
+    if (sLoans) AppState.borrowings = JSON.parse(sLoans);
+    else if (window.ASU_FALLBACK_DATA) AppState.borrowings = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.borrowings));
 
-    if (elAvail) elAvail.textContent = `${availSeats} / ${AppState.seats.length}`;
-    if (elBooks) elBooks.textContent = `${totalInventory} (${totalTitles} Titles)`;
-    if (elLoans) elLoans.textContent = `${myLoans} Book(s)`;
-    if (elFines) elFines.textContent = `₹6.00`;
+    if (sNotifs) AppState.notifications = JSON.parse(sNotifs);
+    else if (window.ASU_FALLBACK_DATA) AppState.notifications = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.notifications));
+  } catch (e) {
+    if (window.ASU_FALLBACK_DATA) {
+      AppState.books = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.books));
+      AppState.seats = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.seats));
+      AppState.borrowings = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.borrowings));
+      AppState.notifications = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.notifications));
+    }
   }
+
+  filterLocalCatalog();
+}
+
+function saveLocalState() {
+  try {
+    localStorage.setItem(STORAGE_PREFIX + "BOOKS", JSON.stringify(AppState.books));
+    localStorage.setItem(STORAGE_PREFIX + "SEATS", JSON.stringify(AppState.seats));
+    localStorage.setItem(STORAGE_PREFIX + "LOANS", JSON.stringify(AppState.borrowings));
+    localStorage.setItem(STORAGE_PREFIX + "NOTIFS", JSON.stringify(AppState.notifications));
+  } catch (e) {}
 }
 
 // Web Audio API Sound Generator for Real-Time Chimes
@@ -246,15 +252,12 @@ function setupFloorSwitch() {
 // ============================================================================
 async function refreshAllData() {
   try {
-    // Attempt ping with 2-second timeout
-    const res = await fetch("/api/stats", { signal: AbortSignal.timeout(2000) });
+    // Attempt ping with 1.5-second timeout
+    const res = await fetch("/api/stats", { signal: AbortSignal.timeout(1500) });
     if (res.ok) {
       const data = await res.json();
       if (data.success) {
         AppState.isLiveServer = true;
-        const banner = document.getElementById("offlineNoticeBanner");
-        if (banner) banner.style.display = "none";
-
         AppState.stats = data;
         document.getElementById("statAvailSeats").textContent = `${data.available_seats} / ${data.total_seats}`;
         document.getElementById("statTotalBooks").textContent = `${data.total_inventory} (${data.total_titles} Titles)`;
@@ -270,24 +273,24 @@ async function refreshAllData() {
         return;
       }
     }
-    throw new Error("API returned non-OK");
+    throw new Error("API not live");
   } catch (err) {
-    // Backend server is not running (e.g. file:/// or server stopped)
+    // Running on cloud host (Vercel / static) or local server paused
     AppState.isLiveServer = false;
-    const banner = document.getElementById("offlineNoticeBanner");
-    if (banner) banner.style.display = "block";
-
     filterLocalCatalog();
   }
 }
 
 function filterLocalCatalog() {
-  if (!window.ASU_FALLBACK_DATA) return;
   const floorVal = document.getElementById("bookFilterFloor")?.value || "";
   const kw = (AppState.searchKeyword || "").toLowerCase();
   const cat = AppState.activeCategory;
 
-  let filtered = window.ASU_FALLBACK_DATA.books.filter(b => {
+  const sourceBooks = (AppState.books && AppState.books.length > 0) ? 
+    AppState.books : 
+    (window.ASU_FALLBACK_DATA ? window.ASU_FALLBACK_DATA.books : []);
+
+  let filtered = sourceBooks.filter(b => {
     const matchesKw = !kw || 
       b.title.toLowerCase().includes(kw) || 
       b.author.toLowerCase().includes(kw) || 
@@ -299,31 +302,35 @@ function filterLocalCatalog() {
     return matchesKw && matchesCat && matchesFloor;
   });
 
-  AppState.books = filtered;
-  const categories = Array.from(new Set(window.ASU_FALLBACK_DATA.books.map(b => b.category))).sort();
+  const categories = Array.from(new Set(sourceBooks.map(b => b.category))).sort();
   renderCategoryChips(categories);
   renderBooksGrid(filtered);
   populateIssueDropdown(filtered);
 
-  // Update KPIs from fallback
-  const totalTitles = window.ASU_FALLBACK_DATA.books.length;
-  const totalInventory = window.ASU_FALLBACK_DATA.books.reduce((acc, b) => acc + (b.total_copies || 0), 0);
-  const availSeats = window.ASU_FALLBACK_DATA.seats.filter(s => s.status === 'AVAILABLE').length;
-  const myLoans = window.ASU_FALLBACK_DATA.borrowings.filter(b => b.student_id === AppState.currentUser.id && b.status !== 'RETURNED').length;
+  // Update KPIs from current state
+  const totalTitles = sourceBooks.length;
+  const totalInventory = sourceBooks.reduce((acc, b) => acc + (b.total_copies || 0), 0);
+  const seatsList = (AppState.seats && AppState.seats.length > 0) ? AppState.seats : (window.ASU_FALLBACK_DATA ? window.ASU_FALLBACK_DATA.seats : []);
+  const loansList = (AppState.borrowings && AppState.borrowings.length > 0) ? AppState.borrowings : (window.ASU_FALLBACK_DATA ? window.ASU_FALLBACK_DATA.borrowings : []);
+  const notifsList = (AppState.notifications && AppState.notifications.length > 0) ? AppState.notifications : (window.ASU_FALLBACK_DATA ? window.ASU_FALLBACK_DATA.notifications : []);
+
+  const availSeats = seatsList.filter(s => s.status === 'AVAILABLE').length;
+  const myLoans = loansList.filter(b => b.student_id === AppState.currentUser.id && b.status !== 'RETURNED').length;
 
   const elAvail = document.getElementById("statAvailSeats");
   const elBooks = document.getElementById("statTotalBooks");
   const elLoans = document.getElementById("statMyLoans");
   const elFines = document.getElementById("statOverdueFines");
 
-  if (elAvail) elAvail.textContent = `${availSeats} / ${window.ASU_FALLBACK_DATA.seats.length}`;
+  if (elAvail) elAvail.textContent = `${availSeats} / ${seatsList.length}`;
   if (elBooks) elBooks.textContent = `${totalInventory} (${totalTitles} Titles)`;
   if (elLoans) elLoans.textContent = `${myLoans} Book(s)`;
   if (elFines) elFines.textContent = `₹6.00`;
 
   renderSeatMap();
-  renderZoneCards(window.ASU_FALLBACK_DATA.seats);
-  renderBorrowings(window.ASU_FALLBACK_DATA.borrowings.filter(b => b.student_id === AppState.currentUser.id));
+  renderZoneCards(seatsList);
+  renderBorrowings(loansList.filter(b => b.student_id === AppState.currentUser.id));
+  renderAlertsChannel(notifsList.filter(n => n.student_id === AppState.currentUser.id || n.student_id === 'ALL'));
 }
 
 async function fetchBooks() {
@@ -1282,27 +1289,56 @@ function setupAdminForms() {
     const studName = document.getElementById("issueStudentName").value;
     const days = document.getElementById("issueDuration").value;
 
-    try {
-      const res = await fetch("/api/admin/issue-book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          book_id: parseInt(bookId),
-          student_id: studId,
-          student_name: studName,
-          days: parseInt(days)
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        SoundFX.playChime("success");
-        alert(data.message);
-        refreshAllData();
-      } else {
-        alert("Issue error: " + data.error);
+    if (AppState.isLiveServer) {
+      try {
+        const res = await fetch("/api/admin/issue-book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            book_id: parseInt(bookId),
+            student_id: studId,
+            student_name: studName,
+            days: parseInt(days)
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          SoundFX.playChime("success");
+          alert(data.message);
+          refreshAllData();
+          return;
+        }
+      } catch (err) {
+        console.warn("Live issue failed, falling back to local:", err);
       }
-    } catch (err) {
-      console.error("Issue failed:", err);
+    }
+
+    // Local / Offline Issue Action
+    const b = AppState.books.find(x => x.id === parseInt(bookId));
+    if (b && b.available_copies > 0) {
+      b.available_copies -= 1;
+      const dueDt = new Date(Date.now() + parseInt(days) * 86400000).toISOString().split("T")[0];
+      const newLoan = {
+        id: AppState.borrowings.length + 1,
+        book_id: b.id,
+        student_id: studId,
+        student_name: studName,
+        student_dept: "School of Computing & AI",
+        issue_date: new Date().toISOString().split("T")[0],
+        due_date: dueDt,
+        status: "BORROWED",
+        renewal_count: 0,
+        fine_amount: 0.0,
+        book_title: b.title,
+        book_author: b.author,
+        book_floor: b.floor,
+        book_aisle: b.aisle
+      };
+      AppState.borrowings.unshift(newLoan);
+      saveLocalState();
+      SoundFX.playChime("success");
+      alert(`Book '${b.title}' issued to ${studName}. Due: ${dueDt}`);
+      filterLocalCatalog();
     }
   });
 
@@ -1317,32 +1353,62 @@ function setupAdminForms() {
     const tier = document.getElementById("newBookTier").value;
     const copies = document.getElementById("newBookCopies").value;
 
-    try {
-      const res = await fetch("/api/admin/add-book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title,
-          author: author,
-          floor: parseInt(floor),
-          aisle: rack.split("/")[0]?.trim() || "Aisle B-2",
-          rack: rack.split("/")[1]?.trim() || "Rack R-01",
-          shelf_tier: parseInt(tier),
-          copies: parseInt(copies)
-        })
-      });
-      const data = await res.json();
-      if (data.success) {
-        SoundFX.playChime("success");
-        alert(data.message);
-        formAdd.reset();
-        refreshAllData();
-      } else {
-        alert("Add error: " + data.error);
+    if (AppState.isLiveServer) {
+      try {
+        const res = await fetch("/api/admin/add-book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: title,
+            author: author,
+            floor: parseInt(floor),
+            aisle: rack.split("/")[0]?.trim() || "Aisle B-2",
+            rack: rack.split("/")[1]?.trim() || "Rack R-01",
+            shelf_tier: parseInt(tier),
+            copies: parseInt(copies)
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          SoundFX.playChime("success");
+          alert(data.message);
+          formAdd.reset();
+          refreshAllData();
+          return;
+        }
+      } catch (err) {
+        console.warn("Live add failed, falling back to local:", err);
       }
-    } catch (err) {
-      console.error("Add book failed:", err);
     }
+
+    // Local / Offline Add Book Action
+    const newBook = {
+      id: AppState.books.length + 1,
+      title: title,
+      author: author,
+      category: "Skill Development",
+      department: parseInt(floor) === 1 ? "School of Computing & AI" : "School of Green Energy",
+      call_no: "005.0 ASU",
+      edition: "1st Edition",
+      publisher: "ASU Press",
+      year: 2024,
+      floor: parseInt(floor),
+      aisle: rack.split("/")[0]?.trim() || "Aisle B-2",
+      rack: rack.split("/")[1]?.trim() || "Rack R-01",
+      shelf_tier: parseInt(tier),
+      total_copies: parseInt(copies),
+      available_copies: parseInt(copies),
+      summary: "Cataloged in Central Library collection.",
+      tags: "Engineering, Skill",
+      cover_color: "#0f766e",
+      rating: 4.8
+    };
+    AppState.books.unshift(newBook);
+    saveLocalState();
+    SoundFX.playChime("success");
+    alert("New book cataloged & positioned on shelf!");
+    formAdd.reset();
+    filterLocalCatalog();
   });
 
   // 3. Broadcast Announcement Form
@@ -1352,35 +1418,50 @@ function setupAdminForms() {
     const title = document.getElementById("broadcastTitle").value;
     const msg = document.getElementById("broadcastMessage").value;
 
-    try {
-      const res = await fetch("/api/admin/broadcast", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, message: msg })
-      });
-      const data = await res.json();
-      if (data.success) {
-        SoundFX.playChime("alert");
-        alert(data.message);
-        formBroadcast.reset();
-        refreshAllData();
-      }
-    } catch (err) {
-      console.error("Broadcast failed:", err);
+    if (AppState.isLiveServer) {
+      try {
+        const res = await fetch("/api/admin/broadcast", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, message: msg })
+        });
+        const data = await res.json();
+        if (data.success) {
+          SoundFX.playChime("alert");
+          alert(data.message);
+          formBroadcast.reset();
+          refreshAllData();
+          return;
+        }
+      } catch (err) {}
     }
+
+    // Local announcement update
+    const headline = document.getElementById("announcementHeadline");
+    if (headline) headline.textContent = title;
+    SoundFX.playChime("alert");
+    alert("Campus announcement broadcasted!");
+    formBroadcast.reset();
   });
 
   // 4. Reset Demo DB Button
   document.getElementById("btnResetDb")?.addEventListener("click", async () => {
     if (confirm("Reset the entire library database to initial demonstration state?")) {
       try {
-        const res = await fetch("/api/seed", { method: "POST" });
-        const data = await res.json();
-        if (data.success) {
-          SoundFX.playChime("success");
-          alert("Database reset successfully!");
-          refreshAllData();
+        localStorage.clear();
+        if (AppState.isLiveServer) {
+          await fetch("/api/seed", { method: "POST" });
         }
+        if (window.ASU_FALLBACK_DATA) {
+          AppState.books = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.books));
+          AppState.seats = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.seats));
+          AppState.borrowings = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.borrowings));
+          AppState.notifications = JSON.parse(JSON.stringify(window.ASU_FALLBACK_DATA.notifications));
+        }
+        saveLocalState();
+        SoundFX.playChime("success");
+        alert("Database reset successfully!");
+        refreshAllData();
       } catch (err) {
         console.error("Reset failed:", err);
       }
